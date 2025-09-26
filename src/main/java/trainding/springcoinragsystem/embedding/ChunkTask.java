@@ -17,12 +17,10 @@ public class ChunkTask implements Callable<List<Article>> {
 
     private final List<Article> articles;
     private final int sentencesPerChunk;
-    private final EmbeddingService embeddingService;
 
-    public ChunkTask(List<Article> articles, int sentencesPerChunk, EmbeddingService embeddingService) {
+    public ChunkTask(List<Article> articles, int sentencesPerChunk) {
         this.articles = articles;
         this.sentencesPerChunk = sentencesPerChunk;
-        this.embeddingService = embeddingService;
     }
 
     @Override
@@ -59,19 +57,12 @@ public class ChunkTask implements Callable<List<Article>> {
                 Chunk chunk = new Chunk();
                 String chunkText = chunkString.toString().trim();
                 chunk.setText(chunkText);
-
-                embeddingService.embedChunk(chunk);
                 chunks.add(chunk);
-
-                log.info("Чанк {} обработан: {}", chunkIndex, chunkText.length() > 100 ? chunkText.substring(0, 100) + "..." : chunkText);
-
                 chunkString = new StringBuilder();
                 counter = 0;
                 chunkIndex++;
             }
         }
-
-        log.info("Всего чанков для текста: {}", chunks.size());
         return chunks;
     }
 }

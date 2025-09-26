@@ -1,5 +1,6 @@
 package trainding.springcoinragsystem.embedding;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 @Service
+@RequiredArgsConstructor
 public class ChunkingProcess {
 
     @Value("${chunk.sentences:4}")
@@ -21,10 +23,9 @@ public class ChunkingProcess {
     @Value("${threads:5}")
     private int threadCount;
 
-    @Autowired
-    private ExecutorService executorService;
-    @Autowired
-    private EmbeddingService embeddingService;
+
+    private final ExecutorService executorService;
+
 
     public List<Article> getArticlesWithChunks(List<Article> articles) {
         List<Future<List<Article>>> fullFillArticlesWithChunks =
@@ -48,14 +49,16 @@ public class ChunkingProcess {
         List<Future<List<Article>>> fullFillArticlesWithChunks = new ArrayList<>();
         int articleCount = articles.size();
         int articlePerThread = (int)Math.ceil((double) articleCount /threadCount);
-        for(int i =0 ; i < articlePerThread ; i++) {
-            int start = i * sentenceSize;
-            int end = Math.min(start + sentenceSize, articlePerThread);
-            Callable<List<Article>> tasks = new ChunkTask(articles,sentenceSize,embeddingService);
-            fullFillArticlesWithChunks.add(executorService.submit(tasks));
+        for (int i = 0; i < threadCount && i * articlePerThread < articleCount; i++) {
+            int start = i * articlePerThread;
+            int end = Math.min(start + articlePerThread, articleCount);
+            List<Article> batch = articles.subList(start, end);
+            ChunkTask task = new ChunkTask(batch, sentenceSize);
+            fullFillArticlesWithChunks.add(executorService.submit(task));
         }
 
         return fullFillArticlesWithChunks;
+
     }
 
 }

@@ -2,14 +2,17 @@ package trainding.springcoinragsystem;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.document.Document;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import trainding.springcoinragsystem.embedding.ChunkingProcess;
 import trainding.springcoinragsystem.entity.Article;
-import trainding.springcoinragsystem.entity.Chunk;
 import trainding.springcoinragsystem.parser.CoinTelegraphParser;
+import trainding.springcoinragsystem.repository.ArticleRepository;
+import trainding.springcoinragsystem.repository.QdrantRepostory;
+import trainding.springcoinragsystem.repository.Qdrantservice;
 
 import java.util.List;
 
@@ -22,24 +25,25 @@ public class SpringCoinRagSystemApplication {
         SpringApplication.run(SpringCoinRagSystemApplication.class, args);
     }
 
-//    @Bean
-//    public CommandLineRunner run(CoinTelegraphParser parserService, ChunkingProcess chunkingProcess) {
-//        return args -> {
-//            log.info("=== Начало парсинга ===");
-//            List<Article> articles = parserService.parse();
-//
-//            List<Article> processedArticles = chunkingProcess.getArticlesWithChunks(articles);
-//
-//            for (Article article : processedArticles) {
-//                log.info("=== Статья: {} ===", article.getTitle());
-//                for (Chunk chunk : article.getChunks()) {
-//                    log.info("Чанк: {}", chunk.getText());
-//                    log.info("Эмбеддинг: {}", chunk.getEmbedding());
-//                }
-//            }
-//
-//            log.info("=== Парсинг и эмбеддинг завершены ===");
-//        };
-//    }
+    @Bean
+    public CommandLineRunner run(
+            CoinTelegraphParser parserService,
+            ChunkingProcess chunkingProcess,
+            Qdrantservice articleVectorService
+    ) {
+        return args -> {
+            log.info("=== Начало парсинга и векторизации ===");
+            List<Article> articles = parserService.parse();
+            List<Article> processedArticles = chunkingProcess.getArticlesWithChunks(articles);
+            articleVectorService.saveArticles(processedArticles);
+            log.info("=== Обработано {} статей ===", processedArticles.size());
+            List<Document> results = articleVectorService.search("криптовалюта");
+            results.forEach(doc ->
+                    log.info("Найдено: {} - {}",
+                            doc.getMetadata().get("article_title"),
+                            doc.getText().substring(0, 100) + "...")
+            );
+        };
+    }
 
 }

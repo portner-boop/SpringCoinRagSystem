@@ -4,20 +4,23 @@ spring:
   ai:
     vectorstore:
       qdrant:
-        host: https://a8041701-a0fb-4e25-ab55-e5765123137a.europe-west3-0.gcp.cloud.qdrant.io
+        host: a8041701-a0fb-4e25-ab55-e5765123137a.europe-west3-0.gcp.cloud.qdrant.io
+        port: 6334
         api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.-hU4XcKgiF10egqEj_5LHdM8X00UdQTMUK5Xvuab8qo
         collection-name: articles
-        use-tls: false
-        initialize-schema: true
+        use-tls: true
+
+    ollama:
+      embedding:
+        model: nomic-embed-text
+        options:
+          num-batch: 10
 threads: 8
 chunk:
   sentences: 4
-embedding:
-  ollama:
-    url: http://localhost:11434/api/embeddings
-    model: nomic-embed-text
-    batch-size: 5
-    max-concurrent: 3
+coin-telegraph:
+  parsing:
+    time: 200
 chat:
   ollama:
     url: http://localhost:11434/api/completions
