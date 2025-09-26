@@ -20,29 +20,38 @@ import java.util.concurrent.*;
 @Service
 @RequiredArgsConstructor
 public class CoinTelegraphParser {
+
     @Value("${coin-telegraph:5}")
-    private  int threadCount;
+    private int threadCount;
+
     private final CoinTelegraphMainPage coinTelegraphMainPage;
     private final ExecutorService executorService;
+
     private static final Logger logger = LoggerFactory.getLogger(CoinTelegraphParser.class);
 
-
     public List<Article> parse() throws InterruptedException {
+        logger.info("=== Старт парсинга CoinTelegraph ===");
         Document doc = Jsoup.parse(coinTelegraphMainPage.getPageHTML());
         Elements elements = doc.getElementsByAttributeValue("data-testid", "post-card-header");
+        int total = elements.size();
+        logger.info("Найдено {} статей на главной странице", total);
         List<Article> articles = fillTitleAndLinkForArticle(elements);
-        List<Future<List<Article>>> fullFillArticles = getFullFillArticlesWithoutChunksInFutureList(articles);
-        return parseArticlesFromFutureList(fullFillArticles);
-    }
-
-    public void showAllArticles(List<Article> articles) {
-        for (int i = 0; i < articles.size(); i++) {
-            Article article = articles.get(i);
-            logger.info("Статья {}: {}", i + 1, article.getTitle());
-            logger.info("Ссылка: {}", article.getLink());
-            logger.info("Текст: {}", article.getText());
-            logger.info("---");
+        List<Future<List<Article>>> tasks = getFullFillArticlesWithoutChunksInFutureList(articles);
+        List<Article> result = new ArrayList<>();
+        int processed = 0;
+        for (Future<List<Article>> task : tasks) {
+            try {
+                List<Article> parsed = task.get();
+                result.addAll(parsed);
+                processed += parsed.size();
+                logger.info("Прогресс: {}/{} статей обработано", processed, total);
+            } catch (ExecutionException | InterruptedException e) {
+                logger.error("Ошибка при обработке задач", e);
+                Thread.currentThread().interrupt();
+            }
         }
+        logger.info("=== Парсинг завершён. Получено {} статей ===", result.size());
+        return result;
     }
 
     private List<Article> fillTitleAndLinkForArticle(Elements elements) {
@@ -58,28 +67,18 @@ public class CoinTelegraphParser {
     }
 
     private List<Future<List<Article>>> getFullFillArticlesWithoutChunksInFutureList(List<Article> articles) {
-        List<Future<List<Article>>> fullFillArticlesWithoutChunks = new ArrayList<>();
+        List<Future<List<Article>>> futures = new ArrayList<>();
         int totalArticles = articles.size();
         int articlesPerThread = (int) Math.ceil((double) totalArticles / threadCount);
         for (int i = 0; i < threadCount; i++) {
             int startIndex = i * articlesPerThread;
-            final int endIndex = Math.min(startIndex + articlesPerThread, totalArticles);
+            int endIndex = Math.min(startIndex + articlesPerThread, totalArticles);
+            if (startIndex >= endIndex) break;
             Callable<List<Article>> task = new ArticleParserTask(articles.subList(startIndex, endIndex));
-            fullFillArticlesWithoutChunks.add(executorService.submit(task));
+            futures.add(executorService.submit(task));
         }
-        return fullFillArticlesWithoutChunks;
-    }
-
-    private List<Article> parseArticlesFromFutureList(List<Future<List<Article>>> futureList) {
-        List<Article> articles = new ArrayList<>();
-        for (Future<List<Article>> future : futureList) {
-            try {
-                articles.addAll(future.get());
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return articles;
+        return futures;
     }
 }
+
 
