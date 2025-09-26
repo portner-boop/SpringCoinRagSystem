@@ -13,10 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 public class Chunk {
 
-    private String id;
-
-    private int chunkIndex;
-
     private String text;
 
     private List<Float> embedding;

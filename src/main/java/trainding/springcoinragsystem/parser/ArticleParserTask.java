@@ -3,6 +3,7 @@ package trainding.springcoinragsystem.parser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Component;
 import trainding.springcoinragsystem.entity.Article;
 import trainding.springcoinragsystem.parser.page.CoinTelegraphMainPage;
 
@@ -11,7 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+@Component
 class ArticleParserTask implements Callable<List<Article>> {
+
     private final List<Article> articles;
 
     ArticleParserTask(List<Article> articles) {

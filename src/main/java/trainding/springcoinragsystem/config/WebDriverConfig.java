@@ -11,10 +11,6 @@ public class WebDriverConfig {
 
     @Bean
     public WebDriver webDriver() {
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-        return new ChromeDriver(options);
+        return new ChromeDriver();
     }
 }
