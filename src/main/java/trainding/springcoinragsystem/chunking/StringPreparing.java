@@ -28,13 +28,17 @@ public class StringPreparing {
             "всегда", "конечно", "всю", "между"
     ));
 
+
     public static String cleanText(String text) {
-        String cleaned = text.replaceAll("[^а-яА-ЯA-Za-z0-9\\s.!?;:]", "")
+        String cleaned = text.replaceAll("[^а-яА-ЯA-Za-z0-9\\s.!?;:]", " ")
                 .replaceAll("\\s+", " ")
                 .toLowerCase()
                 .trim();
+        return cleaned;
+    }
 
-        return Arrays.stream(cleaned.split(" "))
+    public static String removeStopWords(String text) {
+        return Arrays.stream(text.split("\\s+"))
                 .filter(word -> !STOP_WORDS.contains(word))
                 .collect(Collectors.joining(" "));
     }

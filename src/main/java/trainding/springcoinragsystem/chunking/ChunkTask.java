@@ -18,11 +18,11 @@ public class ChunkTask implements Callable<List<Article>> {
 
     private final List<Article> articles;
 
-    @Value("${chunk.sentences:4}")
-    private int sentencesPerChunk;
+    private final int sentencesPerChunk ;
 
-    public ChunkTask(List<Article> articles) {
+    public ChunkTask(List<Article> articles, int sentencesPerChunk) {
         this.articles = articles;
+        this.sentencesPerChunk = sentencesPerChunk;
     }
 
     @Override
@@ -49,7 +49,8 @@ public class ChunkTask implements Callable<List<Article>> {
         int counter = 0;
         int chunkIndex = 0;
         for (int i = 0; i < sentences.length; i++) {
-            chunkString.append(sentences[i]);
+            String cleanSentence = StringPreparing.cleanText(sentences[i]);
+            chunkString.append(cleanSentence);
             counter++;
             if (counter == sentencesPerChunk || i == sentences.length - 1) {
                 Chunk chunk = new Chunk();

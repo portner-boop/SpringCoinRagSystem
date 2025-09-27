@@ -18,6 +18,9 @@ public class ChunkingProcess {
     @Value("${threads:4}")
     private int threadCount;
 
+    @Value("${chunk.sentences}")
+    private int sentencePerChunk;
+
     private final ExecutorService executorService;
 
     public List<Article> getArticlesWithChunks(List<Article> articles) {
@@ -47,7 +50,7 @@ public class ChunkingProcess {
             int end = Math.min(start + articlePerThread, articleCount);
             if (start >= end) break;
             List<Article> subList = articles.subList(start, end);
-            ChunkTask task = new ChunkTask(subList);
+            ChunkTask task = new ChunkTask(subList,sentencePerChunk);
             fullFillArticlesWithChunks.add(executorService.submit(task));
         }
         return fullFillArticlesWithChunks;

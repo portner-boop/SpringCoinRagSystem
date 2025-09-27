@@ -7,14 +7,17 @@ spring:
         host: ${QDRANT_HOST}
         port: ${QDRANT_PORT:6334}
         api-key: ${QDRANT_API_KEY}
-        collection-name: ${QDRANT_COLLECTION:articles-v1}
+        collection-name: ${QDRANT_COLLECTION:articles-v2}
         use-tls: ${QDRANT_USE_TLS:true}
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       embedding:
         model: ${OLLAMA_EMBED_MODEL:nomic-embed-text}
         options:
-          num-batch: ${OLLAMA_EMBED_BATCH:10}
+          num-batch: ${OLLAMA_EMBED_BATCH:12}
+          num-thread: ${OLLAMA_EMBED_THREADS:2}
+          num-gpu: ${OLLAMA_EMBED_GPU:1}
+          main-gpu: 0
       chat:
         model: ${OLLAMA_CHAT_MODEL:qwen2.5:3b-instruct}
         options:
@@ -29,7 +32,7 @@ telegram:
     username: ${TELEGRAM_BOT_USERNAME:coin_rag_bot}
 threads: ${APP_THREADS:8}
 chunk:
-  sentences: ${CHUNK_SENTENCES:4}
+  sentences: 4
 coin-telegraph:
   parsing:
     time: ${PARSING_TIME:200}
