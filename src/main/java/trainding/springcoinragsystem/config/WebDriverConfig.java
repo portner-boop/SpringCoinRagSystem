@@ -8,11 +8,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
 @Configuration
+@Lazy
 public class WebDriverConfig {
 
     @Bean(destroyMethod = "quit")
     @Lazy
     public WebDriver webDriver() {
-        return new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new");
+        return new ChromeDriver(options);
     }
 }

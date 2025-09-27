@@ -12,7 +12,7 @@ public class BasePageConfig {
     protected final WebDriver driver;
 
     @Autowired
-    public BasePageConfig( @Lazy WebDriver driver) {
+    public BasePageConfig( WebDriver driver) {
         this.driver = driver;
         PageFactory.initElements(driver, this);
     }

@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
 @Configuration
 public class ExecutorServiceConfig {
 
-    @Value("${threads:5}")
+    @Value("${threads:4}")
     private int corePoolSize;
 
     @Bean

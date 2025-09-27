@@ -4,32 +4,32 @@ spring:
   ai:
     vectorstore:
       qdrant:
-        host: a8041701-a0fb-4e25-ab55-e5765123137a.europe-west3-0.gcp.cloud.qdrant.io
-        port: 6334
-        api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.-hU4XcKgiF10egqEj_5LHdM8X00UdQTMUK5Xvuab8qo
-        collection-name: articles-v1
-        use-tls: true
+        host: ${QDRANT_HOST}
+        port: ${QDRANT_PORT:6334}
+        api-key: ${QDRANT_API_KEY}
+        collection-name: ${QDRANT_COLLECTION:articles-v1}
+        use-tls: ${QDRANT_USE_TLS:true}
     ollama:
-      base-url: http://localhost:11434
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       embedding:
-        model: nomic-embed-text
+        model: ${OLLAMA_EMBED_MODEL:nomic-embed-text}
         options:
-          num-batch: 10
+          num-batch: ${OLLAMA_EMBED_BATCH:10}
       chat:
-        model: qwen2.5:3b-instruct
+        model: ${OLLAMA_CHAT_MODEL:qwen2.5:3b-instruct}
         options:
-          temperature: 0.3
-          top-p: 0.9
-          top-k: 40
-          num-predict: 1000
-          repeat-penalty: 1.1
+          temperature: ${OLLAMA_TEMP:0.2}
+          top-p: ${OLLAMA_TOP_P:0.9}
+          top-k: ${OLLAMA_TOP_K:40}
+          num-predict: ${OLLAMA_NUM_PREDICT:1000}
+          repeat-penalty: ${OLLAMA_REPEAT_PENALTY:1}
 telegram:
   bot:
-    token: 8392604790:AAE7EHRO2et2R2VrY5NhlxMJsp0mDif6mRI
-    username: coin_rag_bot
-threads: 8
+    token: ${TELEGRAM_BOT_TOKEN}
+    username: ${TELEGRAM_BOT_USERNAME:coin_rag_bot}
+threads: ${APP_THREADS:8}
 chunk:
-  sentences: 4
+  sentences: ${CHUNK_SENTENCES:4}
 coin-telegraph:
   parsing:
-    time: 15000
+    time: ${PARSING_TIME:200}

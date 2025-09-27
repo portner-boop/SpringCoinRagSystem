@@ -3,11 +3,9 @@ package trainding.springcoinragsystem.parser.page;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
-@Lazy
 public class CoinTelegraphMainPage extends BasePageConfig {
 
     public static final String COIN_TELEGRAPH_MAIN_PAGE = "https://ru.cointelegraph.com/";

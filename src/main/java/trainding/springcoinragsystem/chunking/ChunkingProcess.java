@@ -1,4 +1,4 @@
-package trainding.springcoinragsystem.embedding;
+package trainding.springcoinragsystem.chunking;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,23 +15,18 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class ChunkingProcess {
 
-    @Value("${chunk.sentences:4}")
-    private int sentenceSize;
-
-    @Value("${threads:5}")
+    @Value("${threads:4}")
     private int threadCount;
 
-
     private final ExecutorService executorService;
-
 
     public List<Article> getArticlesWithChunks(List<Article> articles) {
         List<Future<List<Article>>> fullFillArticlesWithChunks =
                 getFullFillArticleFromFutureList(articles);
-        return parseArticlesFromFutureList(fullFillArticlesWithChunks);
+        return listConverterFutureToCommon(fullFillArticlesWithChunks);
     }
 
-    private List<Article> parseArticlesFromFutureList(List<Future<List<Article>>> fullFillArticlesWithChunks) {
+    private List<Article> listConverterFutureToCommon(List<Future<List<Article>>> fullFillArticlesWithChunks) {
         List<Article> articlesWithChunks = new ArrayList<>();
         for(Future<List<Article>> fullFillArticlesWithChunk : fullFillArticlesWithChunks) {
             try {
@@ -47,16 +42,14 @@ public class ChunkingProcess {
         List<Future<List<Article>>> fullFillArticlesWithChunks = new ArrayList<>();
         int articleCount = articles.size();
         int articlePerThread = (int)Math.ceil((double) articleCount /threadCount);
-        for (int i = 0; i < threadCount && i * articlePerThread < articleCount; i++) {
+        for (int i = 0; i < threadCount; i++) {
             int start = i * articlePerThread;
             int end = Math.min(start + articlePerThread, articleCount);
-            List<Article> batch = articles.subList(start, end);
-            ChunkTask task = new ChunkTask(batch, sentenceSize);
+            if (start >= end) break;
+            List<Article> subList = articles.subList(start, end);
+            ChunkTask task = new ChunkTask(subList);
             fullFillArticlesWithChunks.add(executorService.submit(task));
         }
-
         return fullFillArticlesWithChunks;
-
     }
-
 }

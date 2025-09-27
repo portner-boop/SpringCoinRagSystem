@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -14,7 +15,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class CoinRagTelegramBot extends TelegramLongPollingBot {
     private static final Logger log = LoggerFactory.getLogger(CoinRagTelegramBot.class);
 
-    private final RagChatService ragChatService;
+    private final ChatService ragChatService;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -22,7 +23,8 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
     @Value("${telegram.bot.username}")
     private String botUsername;
 
-    public CoinRagTelegramBot(RagChatService ragChatService) {
+    public CoinRagTelegramBot(ChatService ragChatService, DefaultBotOptions botOptions) {
+        super(botOptions);
         this.ragChatService = ragChatService;
     }
 
@@ -54,7 +56,7 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
                 if (messageText.equals("/start")) {
                     response = "Welcome to Coin RAG Bot! Ask about crypto articles.";
                 } else if (messageText.equals("/update-admin")) {
-                    ragChatService.updateArticles();
+                    ragChatService.updateArticlesInQdrant();
                     response = "Data updated successfully from CoinTelegraph.";
                 } else {
                     response = ragChatService.chatWithRag(messageText);
@@ -62,7 +64,7 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
 
                 editMessage(chatId, messageId, response);
             } catch (Exception e) {
-                log.error("Error processing message: {}", messageText, e);
+                log.error("Error processing message for chat {}: {}", chatId, messageText, e);
                 if (messageId != null) {
                     editMessage(chatId, messageId, "Sorry, an error occurred. Try again later.");
                 } else {

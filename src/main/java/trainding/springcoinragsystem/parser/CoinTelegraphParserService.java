@@ -19,7 +19,7 @@ import java.util.concurrent.*;
 
 @Service
 @RequiredArgsConstructor
-public class CoinTelegraphParser {
+public class CoinTelegraphParserService {
 
     @Value("${coin-telegraph:5}")
     private int threadCount;
@@ -27,7 +27,7 @@ public class CoinTelegraphParser {
     private final CoinTelegraphMainPage coinTelegraphMainPage;
     private final ExecutorService executorService;
 
-    private static final Logger logger = LoggerFactory.getLogger(CoinTelegraphParser.class);
+    private static final Logger logger = LoggerFactory.getLogger(CoinTelegraphParserService.class);
 
     public List<Article> parse() throws InterruptedException {
         logger.info("=== Старт парсинга CoinTelegraph ===");
@@ -36,22 +36,8 @@ public class CoinTelegraphParser {
         int total = elements.size();
         logger.info("Найдено {} статей на главной странице", total);
         List<Article> articles = fillTitleAndLinkForArticle(elements);
-        List<Future<List<Article>>> tasks = getFullFillArticlesWithoutChunksInFutureList(articles);
-        List<Article> result = new ArrayList<>();
-        int processed = 0;
-        for (Future<List<Article>> task : tasks) {
-            try {
-                List<Article> parsed = task.get();
-                result.addAll(parsed);
-                processed += parsed.size();
-                logger.info("Прогресс: {}/{} статей обработано", processed, total);
-            } catch (ExecutionException | InterruptedException e) {
-                logger.error("Ошибка при обработке задач", e);
-                Thread.currentThread().interrupt();
-            }
-        }
-        logger.info("=== Парсинг завершён. Получено {} статей ===", result.size());
-        return result;
+        List<Future<List<Article>>> tasks = getFullFillArticlesWithoutChunks(articles);
+        return listConverterFutureToCommon(tasks);
     }
 
     private List<Article> fillTitleAndLinkForArticle(Elements elements) {
@@ -66,7 +52,7 @@ public class CoinTelegraphParser {
         return articles;
     }
 
-    private List<Future<List<Article>>> getFullFillArticlesWithoutChunksInFutureList(List<Article> articles) {
+    private List<Future<List<Article>>> getFullFillArticlesWithoutChunks(List<Article> articles) {
         List<Future<List<Article>>> futures = new ArrayList<>();
         int totalArticles = articles.size();
         int articlesPerThread = (int) Math.ceil((double) totalArticles / threadCount);
@@ -78,6 +64,24 @@ public class CoinTelegraphParser {
             futures.add(executorService.submit(task));
         }
         return futures;
+    }
+
+    private List<Article> listConverterFutureToCommon(List<Future<List<Article>>> tasks) {
+        List<Article> result = new ArrayList<>();
+        int processed = 0;
+        for (Future<List<Article>> task : tasks) {
+            try {
+                List<Article> parsed = task.get();
+                result.addAll(parsed);
+                processed += parsed.size();
+                logger.info("Прогресс: {}", processed);
+            } catch (ExecutionException | InterruptedException e) {
+                logger.error("Ошибка при обработке задач", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+        logger.info("=== Парсинг завершён. Получено {} статей ===", result.size());
+        return result;
     }
 }
 
