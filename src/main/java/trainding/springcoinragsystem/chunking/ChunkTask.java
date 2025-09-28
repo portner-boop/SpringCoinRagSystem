@@ -17,7 +17,7 @@ public class ChunkTask implements Callable<List<Article>> {
 
     private final List<Article> articles;
 
-    private final int sentencesPerChunk ;
+    private final int sentencesPerChunk;
 
     public ChunkTask(List<Article> articles, int sentencesPerChunk) {
         this.articles = articles;

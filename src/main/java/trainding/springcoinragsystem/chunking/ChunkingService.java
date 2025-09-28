@@ -15,13 +15,11 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class ChunkingService {
 
+    private final ExecutorService executorService;
     @Value("${threads:4}")
     private int threadCount;
-
     @Value("${chunk.sentences}")
     private int sentencePerChunk;
-
-    private final ExecutorService executorService;
 
     public List<Article> getArticlesWithChunks(List<Article> articles) {
         List<Future<List<Article>>> fullFillArticlesWithChunks =
@@ -31,7 +29,7 @@ public class ChunkingService {
 
     private List<Article> listConverterFutureToCommon(List<Future<List<Article>>> fullFillArticlesWithChunks) {
         List<Article> articlesWithChunks = new ArrayList<>();
-        for(Future<List<Article>> fullFillArticlesWithChunk : fullFillArticlesWithChunks) {
+        for (Future<List<Article>> fullFillArticlesWithChunk : fullFillArticlesWithChunks) {
             try {
                 articlesWithChunks.addAll(fullFillArticlesWithChunk.get());
             } catch (InterruptedException | ExecutionException e) {
@@ -44,13 +42,13 @@ public class ChunkingService {
     private List<Future<List<Article>>> getFullFillArticleFromFutureList(List<Article> articles) {
         List<Future<List<Article>>> fullFillArticlesWithChunks = new ArrayList<>();
         int articleCount = articles.size();
-        int articlePerThread = (int)Math.ceil((double) articleCount /threadCount);
+        int articlePerThread = (int) Math.ceil((double) articleCount / threadCount);
         for (int i = 0; i < threadCount; i++) {
             int start = i * articlePerThread;
             int end = Math.min(start + articlePerThread, articleCount);
             if (start >= end) break;
             List<Article> subList = articles.subList(start, end);
-            ChunkTask task = new ChunkTask(subList,sentencePerChunk);
+            ChunkTask task = new ChunkTask(subList, sentencePerChunk);
             fullFillArticlesWithChunks.add(executorService.submit(task));
         }
         return fullFillArticlesWithChunks;

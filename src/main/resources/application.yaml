@@ -12,7 +12,7 @@ spring:
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       embedding:
-        model: ${OLLAMA_EMBED_MODEL:nomic-embed-text}
+        model: ${OLLAMA_EMBED_MODEL:bge-m3}
         options:
           num-batch: ${OLLAMA_EMBED_BATCH:12}
           num-thread: ${OLLAMA_EMBED_THREADS:2}

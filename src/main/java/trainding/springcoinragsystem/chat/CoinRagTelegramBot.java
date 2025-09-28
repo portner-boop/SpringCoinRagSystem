@@ -30,8 +30,7 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
     public CoinRagTelegramBot(ChatService ragChatService, DefaultBotOptions botOptions) {
         super(botOptions);
         this.ragChatService = ragChatService;
-        // Создаём пул потоков с фиксированным количеством потоков
-        this.executorService = Executors.newFixedThreadPool(10); // Настройте размер пула по вашим потребностям
+        this.executorService = Executors.newFixedThreadPool(10);
     }
 
     @Override
@@ -120,6 +119,7 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, text);
         }
     }
+
     @Override
     public void onClosing() {
         executorService.shutdown();

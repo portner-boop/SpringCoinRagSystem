@@ -11,7 +11,10 @@ import org.springframework.stereotype.Repository;
 import trainding.springcoinragsystem.entity.Article;
 import trainding.springcoinragsystem.entity.Chunk;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -44,7 +47,7 @@ public class QdrantRepository implements ArticleRepository {
                     log.info("Чанк {} добавлен: {}", i, chunk.getText());
                 }
                 log.info("Статья '{}': сохранено {} чанков", title, articleSaved);
-            },executor);
+            }, executor);
             futures.add(future);
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();

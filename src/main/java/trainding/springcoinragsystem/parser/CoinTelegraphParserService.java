@@ -1,7 +1,6 @@
 package trainding.springcoinragsystem.parser;
 
 import lombok.RequiredArgsConstructor;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,19 +14,20 @@ import trainding.springcoinragsystem.parser.page.CoinTelegraphMainPage;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
 public class CoinTelegraphParserService {
 
-    @Value("${coin-telegraph:5}")
-    private int threadCount;
-
+    private static final Logger logger = LoggerFactory.getLogger(CoinTelegraphParserService.class);
     private final CoinTelegraphMainPage coinTelegraphMainPage;
     private final ExecutorService executorService;
-
-    private static final Logger logger = LoggerFactory.getLogger(CoinTelegraphParserService.class);
+    @Value("${coin-telegraph:5}")
+    private int threadCount;
 
     public List<Article> parse() throws InterruptedException {
         logger.info("=== Старт парсинга CoinTelegraph ===");
