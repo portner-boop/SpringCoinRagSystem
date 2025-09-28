@@ -12,18 +12,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Qdrantservice {
 
-    private final QdrantRepository QdrantRepostory;
+    private final QdrantRepository qdrantRepository;
 
     public void saveArticles(List<Article> articles) {
-        QdrantRepostory.saveArticles(articles);
+        qdrantRepository.saveArticles(articles);
     }
 
     public List<Document> search(String query) {
-        return QdrantRepostory.searchSimilar(query);
+        return qdrantRepository.searchSimilar(query);
     }
 
     public List<Document> search(SearchRequest searchRequest) {
-        return QdrantRepostory.searchSimilar(searchRequest);
+        return qdrantRepository.searchSimilar(searchRequest);
     }
 
 }

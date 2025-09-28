@@ -11,11 +11,15 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Component
 public class CoinRagTelegramBot extends TelegramLongPollingBot {
     private static final Logger log = LoggerFactory.getLogger(CoinRagTelegramBot.class);
 
     private final ChatService ragChatService;
+    private final ExecutorService executorService; // Пул потоков
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -26,6 +30,8 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
     public CoinRagTelegramBot(ChatService ragChatService, DefaultBotOptions botOptions) {
         super(botOptions);
         this.ragChatService = ragChatService;
+        // Создаём пул потоков с фиксированным количеством потоков
+        this.executorService = Executors.newFixedThreadPool(10); // Настройте размер пула по вашим потребностям
     }
 
     @Override
@@ -43,33 +49,48 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String chatId = update.getMessage().getChatId().toString();
             String messageText = update.getMessage().getText().trim();
-            Long messageId = null;
+            Long messageId = sendLoadingMessage(chatId);
+            executorService.submit(() -> processMessage(chatId, messageText, messageId));
+        }
+    }
 
-            try {
-                SendMessage loadingMessage = SendMessage.builder()
-                        .chatId(chatId)
-                        .text("Ответ обрабатывается...")
-                        .build();
-                messageId = Long.valueOf(execute(loadingMessage).getMessageId());
+    private Long sendLoadingMessage(String chatId) {
+        SendMessage loadingMessage = SendMessage.builder()
+                .chatId(chatId)
+                .text("Ответ обрабатывается...")
+                .build();
+        try {
+            return Long.valueOf(execute(loadingMessage).getMessageId());
+        } catch (TelegramApiException e) {
+            log.error("Failed to send loading message to {}: {}", chatId, e.getMessage());
+            return null;
+        }
+    }
 
-                String response;
-                if (messageText.equals("/start")) {
-                    response = "Welcome to Coin RAG Bot! Ask about crypto articles.";
-                } else if (messageText.equals("/update-admin")) {
-                    ragChatService.updateArticlesInQdrant();
-                    response = "Data updated successfully from CoinTelegraph.";
-                } else{
-                    response = ragChatService.chatWithRag(messageText);
-                }
+    private void processMessage(String chatId, String messageText, Long messageId) {
+        try {
+            String response;
+            if (messageText.equals("/start")) {
+                response = "Welcome to Coin RAG Bot! Ask about crypto articles.";
+            } else if (messageText.equals("/update-admin")) {
+                ragChatService.updateArticlesInQdrant();
+                response = "Data updated successfully from CoinTelegraph.";
+            } else {
+                response = ragChatService.chatWithRag(messageText);
+            }
 
+            if (messageId != null) {
                 editMessage(chatId, messageId, response);
-            } catch (Exception e) {
-                log.error("Error processing message for chat {}: {}", chatId, messageText, e);
-                if (messageId != null) {
-                    editMessage(chatId, messageId, "Sorry, an error occurred. Try again later.");
-                } else {
-                    sendMessage(chatId, "Sorry, an error occurred. Try again later.");
-                }
+            } else {
+                sendMessage(chatId, response);
+            }
+        } catch (Exception e) {
+            log.error("Error processing message for chat {}: {}", chatId, messageText, e);
+            String errorMessage = "Sorry, an error occurred. Try again later.";
+            if (messageId != null) {
+                editMessage(chatId, messageId, errorMessage);
+            } else {
+                sendMessage(chatId, errorMessage);
             }
         }
     }
@@ -98,5 +119,9 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
             log.error("Failed to edit message {} in chat {}: {}", messageId, chatId, text, e);
             sendMessage(chatId, text);
         }
+    }
+    @Override
+    public void onClosing() {
+        executorService.shutdown();
     }
 }
