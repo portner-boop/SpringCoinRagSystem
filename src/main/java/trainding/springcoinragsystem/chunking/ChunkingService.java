@@ -13,7 +13,7 @@ import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
-public class ChunkingProcess {
+public class ChunkingService {
 
     @Value("${threads:4}")
     private int threadCount;

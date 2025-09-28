@@ -2,7 +2,6 @@ package trainding.springcoinragsystem.chunking;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import trainding.springcoinragsystem.entity.Article;
 import trainding.springcoinragsystem.entity.Chunk;
 
@@ -29,14 +28,14 @@ public class ChunkTask implements Callable<List<Article>> {
     public List<Article> call() {
         List<Article> processedArticles = new ArrayList<>();
         for (Article article : articles) {
-            Article articleWithChunks = fillArticleWithChunk(article);
+            Article articleWithChunks = fillArticleWithChunks(article);
             processedArticles.add(articleWithChunks);
             log.info("Обработана статья: {} | Чанков: {}", article.getTitle(), articleWithChunks.getChunks().size());
         }
         return processedArticles;
     }
 
-    private Article fillArticleWithChunk(Article article) {
+    private Article fillArticleWithChunks(Article article) {
         String cleanText = cleanText(article.getText());
         article.setChunks(makeArrayOfChunks(cleanText));
         return article;
@@ -50,6 +49,7 @@ public class ChunkTask implements Callable<List<Article>> {
         int chunkIndex = 0;
         for (int i = 0; i < sentences.length; i++) {
             String cleanSentence = StringPreparing.cleanText(sentences[i]);
+            chunkString.append(" ");
             chunkString.append(cleanSentence);
             counter++;
             if (counter == sentencesPerChunk || i == sentences.length - 1) {

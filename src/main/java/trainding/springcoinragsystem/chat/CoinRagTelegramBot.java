@@ -58,7 +58,7 @@ public class CoinRagTelegramBot extends TelegramLongPollingBot {
                 } else if (messageText.equals("/update-admin")) {
                     ragChatService.updateArticlesInQdrant();
                     response = "Data updated successfully from CoinTelegraph.";
-                } else {
+                } else{
                     response = ragChatService.chatWithRag(messageText);
                 }
 

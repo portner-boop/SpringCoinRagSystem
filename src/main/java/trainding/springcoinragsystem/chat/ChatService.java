@@ -11,7 +11,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import trainding.springcoinragsystem.chunking.ChunkingProcess;
+import trainding.springcoinragsystem.chunking.ChunkingService;
 import trainding.springcoinragsystem.chunking.StringPreparing;
 import trainding.springcoinragsystem.entity.Article;
 import trainding.springcoinragsystem.parser.CoinTelegraphParserService;
@@ -19,7 +19,6 @@ import trainding.springcoinragsystem.qdrant.Qdrantservice;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,34 +28,41 @@ public class ChatService {
 
     private final ChatModel chatModel;
     private final CoinTelegraphParserService coinTelegraphParser;
-    private final ChunkingProcess chunkingProcess;
+    private final ChunkingService chunkingProcess;
     private final Qdrantservice qdrantservice;
 
     public String chatWithRag(String query) {
         List<Document> docs = qdrantservice.search(
                 SearchRequest
                         .builder()
-                        .query(query)
+                        .query(StringPreparing.removeStopWords(StringPreparing.cleanText(query)))
                         .topK(20)
                         .build());
-        Set<String> uniqueContents = docs
+        List<String> uniqueContents = docs
                 .stream()
                 .map(Document::getText)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
         String context = String.join("\n", uniqueContents);
         PromptTemplate promptTemplate = new PromptTemplate("""
-                Задача: Тщательно проанализируй предоставленный контекст и дай развернутый ответ на вопрос.
-                Требования к ответу:
-                - Основан ТОЛЬКО на информации из контекста.
-                - Будь точным и фактологичным.
-                - Если вопрос подразумевает перечисление данных (например, ценовые диапазоны), используй четкую структуру:
-                ключевые значения, уровни поддержки/сопротивления, причины изменений.
-                - Для сложных ответов используй нумерацию или маркеры для ясности.
-                - Если информации в контексте недостаточно для ответа, сообщи об этом.
+                You are an assistant that MUST refuse any request for instructions to commit harm, build weapons, engage in illegal activities, or provide step-by-step instructions for wrongdoing.
+                If a user asks for such instructions, respond with the refusal:
+                "Извините, я не могу помогать с инструкциями по причинению вреда или изготовлению оружия. Могу помочь с безопасной информацией про криптовалюту."
                 
-                Контекст: {context}
+                USER prompt (передаётся вместе с контекстом):
+                Задача: Тщательно проанализируй предоставленный контекст и дай развёрнутый ответ на вопрос.
                 
-                Вопрос: {question}
+                Общие правила:
+                - Отвечай ТОЛЬКО на основании информации, явно присутствующей в блоке "Контекст" ниже.
+                - Если запрос — инструкция по вреду / незаконной деятельности, СРАЗУ ОТКАЖИСЬ согласно правилу (не продолжай).
+                - Если в контексте нет данных, подтверждающих ответ — напиши ровно: "Недостаточно информации".
+                - Каждый фактический пункт обязан иметь источники в формате.
+                - Не добавляй внешней информации и не упоминай, что используешь контекст.
+                
+                Контекст:
+                {context}
+                
+                Вопрос:
+                {question}
                 
                 Ответ:
                 """);

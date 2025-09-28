@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Qdrantservice {
 
-    private final QdrantRepostory QdrantRepostory;
+    private final QdrantRepository QdrantRepostory;
 
     public void saveArticles(List<Article> articles) {
         QdrantRepostory.saveArticles(articles);

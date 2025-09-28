@@ -18,9 +18,9 @@ import java.util.concurrent.ExecutorService;
 
 @Repository
 @RequiredArgsConstructor
-public class QdrantRepostory implements ArticleRepository {
+public class QdrantRepository implements ArticleRepository {
 
-    private static final Logger log = LoggerFactory.getLogger(QdrantRepostory.class);
+    private static final Logger log = LoggerFactory.getLogger(QdrantRepository.class);
     private final VectorStore vectorStore;
     private final ExecutorService executor;
 

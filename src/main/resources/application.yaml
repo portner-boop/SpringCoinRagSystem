@@ -32,7 +32,7 @@ telegram:
     username: ${TELEGRAM_BOT_USERNAME:coin_rag_bot}
 threads: ${APP_THREADS:8}
 chunk:
-  sentences: 4
+  sentences: ${CHUNK_SENTENCES:4}
 coin-telegraph:
   parsing:
     time: ${PARSING_TIME:200}
