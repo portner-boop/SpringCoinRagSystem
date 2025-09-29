@@ -36,12 +36,12 @@
 2. **Advanced** — расширенный поиск:
     - Генерируются 5 переформулировок запроса.
     - Для каждой переформулировки и самому запросу ищутся топ-K фрагментов.
-    - Результаты агрегируются и ранжируются по суммарной релевантности.
-    - Формируется расширенный контекст для LLM с максимальным покрытием информации.
-      Промт:
+    - Из них составлятся контектс по релевантночти каждого, контекст вмещает 30 лучших.
+
+Промт:
+
 ```
-```
-```You are an assistant that MUST refuse any request for instructions to commit harm, build weapons, engage in illegal activities, or provide step-by-step instructions for wrongdoing.  
+You are an assistant that MUST refuse any request for instructions to commit harm, build weapons, engage in illegal activities, or provide step-by-step instructions for wrongdoing.  
 If a user asks for such instructions, respond with the refusal:  
 "Извините, я не могу помогать с инструкциями по причинению вреда или изготовлению оружия. Могу помочь с безопасной информацией про криптовалюту."  
   
