@@ -58,6 +58,7 @@ public class ChatService {
                 .map(Map.Entry::getKey)
                 .map(textToDoc::get)
                 .map(Document::getText)
+                .distinct()
                 .collect(Collectors.joining("\n"));
 
         PromptTemplate promptTemplate = new PromptTemplate("""
