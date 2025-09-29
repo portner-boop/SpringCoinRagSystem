@@ -1,12 +1,11 @@
 package trainding.springcoinragsystem.parser;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import trainding.springcoinragsystem.entity.Article;
@@ -20,21 +19,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CoinTelegraphParserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(CoinTelegraphParserService.class);
     private final CoinTelegraphMainPage coinTelegraphMainPage;
     private final ExecutorService executorService;
     @Value("${coin-telegraph:5}")
     private int threadCount;
 
     public List<Article> parse() throws InterruptedException {
-        logger.info("=== Старт парсинга CoinTelegraph ===");
+        log.info("=== Старт парсинга CoinTelegraph ===");
         Document doc = Jsoup.parse(coinTelegraphMainPage.getPageHTML());
         Elements elements = doc.getElementsByAttributeValue("data-testid", "post-card-header");
         int total = elements.size();
-        logger.info("Найдено {} статей на главной странице", total);
+        log.info("Найдено {} статей на главной странице", total);
         List<Article> articles = fillTitleAndLinkForArticle(elements);
         List<Future<List<Article>>> tasks = getFullFillArticlesWithoutChunks(articles);
         return listConverterFutureToCommon(tasks);
@@ -74,13 +73,12 @@ public class CoinTelegraphParserService {
                 List<Article> parsed = task.get();
                 result.addAll(parsed);
                 processed += parsed.size();
-                logger.info("Прогресс: {}", processed);
+                log.info("Прогресс: {}", processed);
             } catch (ExecutionException | InterruptedException e) {
-                logger.error("Ошибка при обработке задач", e);
                 Thread.currentThread().interrupt();
             }
         }
-        logger.info("=== Парсинг завершён. Получено {} статей ===", result.size());
+        log.info("=== Парсинг завершён. Получено {} статей ===", result.size());
         return result;
     }
 }

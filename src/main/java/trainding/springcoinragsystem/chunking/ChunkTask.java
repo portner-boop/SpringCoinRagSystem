@@ -1,7 +1,6 @@
 package trainding.springcoinragsystem.chunking;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import trainding.springcoinragsystem.entity.Article;
 import trainding.springcoinragsystem.entity.Chunk;
 
@@ -11,15 +10,16 @@ import java.util.concurrent.Callable;
 
 import static trainding.springcoinragsystem.chunking.StringPreparing.cleanText;
 
+@Slf4j
 public class ChunkTask implements Callable<List<Article>> {
-
-    private static final Logger log = LoggerFactory.getLogger(ChunkTask.class);
 
     private final List<Article> articles;
 
     private final int sentencesPerChunk;
 
-    public ChunkTask(List<Article> articles, int sentencesPerChunk) {
+
+    public ChunkTask(List<Article> articles,
+                     int sentencesPerChunk) {
         this.articles = articles;
         this.sentencesPerChunk = sentencesPerChunk;
     }
@@ -36,8 +36,9 @@ public class ChunkTask implements Callable<List<Article>> {
     }
 
     private Article fillArticleWithChunks(Article article) {
-        String cleanText = cleanText(article.getText());
-        article.setChunks(makeArrayOfChunks(cleanText));
+        String text = cleanText(article.getText());
+        List<Chunk> chunks = makeArrayOfChunks(text);
+        article.setChunks(chunks);
         return article;
     }
 
@@ -48,7 +49,7 @@ public class ChunkTask implements Callable<List<Article>> {
         int counter = 0;
         int chunkIndex = 0;
         for (int i = 0; i < sentences.length; i++) {
-            String cleanSentence = StringPreparing.cleanText(sentences[i]);
+            String cleanSentence = StringPreparing.removeStopWords(sentences[i]);
             chunkString.append(" ");
             chunkString.append(cleanSentence);
             counter++;

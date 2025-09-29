@@ -21,6 +21,7 @@ public class ChunkingService {
     @Value("${chunk.sentences}")
     private int sentencePerChunk;
 
+
     public List<Article> getArticlesWithChunks(List<Article> articles) {
         List<Future<List<Article>>> fullFillArticlesWithChunks =
                 getFullFillArticleFromFutureList(articles);

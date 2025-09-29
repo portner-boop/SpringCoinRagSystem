@@ -1,8 +1,9 @@
 package trainding.springcoinragsystem.chat;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -17,21 +18,84 @@ import trainding.springcoinragsystem.entity.Article;
 import trainding.springcoinragsystem.parser.CoinTelegraphParserService;
 import trainding.springcoinragsystem.qdrant.Qdrantservice;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
-    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     private final ChatModel chatModel;
     private final CoinTelegraphParserService coinTelegraphParser;
     private final ChunkingService chunkingProcess;
     private final Qdrantservice qdrantservice;
+    private final ObjectMapper objectMapper;
 
-    public String chatWithRag(String query) {
+    public String chatWithRagAdvanced(String query) {
+        List<String> variants = generateVariants(query);
+        variants.add(query);
+        Map<String, Float> aggregatedScores = new HashMap<>();
+        Map<String, Document> textToDoc = new HashMap<>();
+        for (String variant : variants) {
+            List<Document> hits =
+                    qdrantservice.search(SearchRequest
+                            .builder()
+                            .query(StringPreparing.cleanText(StringPreparing.removeStopWords(variant)))
+                            .topK(10)
+                            .build());
+            for (Document doc : hits) {
+                String text = doc.getText();
+                float score = doc.getScore() != null ? doc.getScore().floatValue() : 0f;
+                aggregatedScores.merge(text, score, Float::sum);
+                textToDoc.putIfAbsent(text, doc);
+            }
+        }
+        int finalTopK = 30;
+        String context = aggregatedScores.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(finalTopK)
+                .map(Map.Entry::getKey)
+                .map(textToDoc::get)
+                .map(Document::getText)
+                .collect(Collectors.joining("\n"));
+
+        PromptTemplate promptTemplate = new PromptTemplate("""
+                You are an assistant that MUST refuse any request for instructions to commit harm, build weapons, engage in illegal activities, or provide step-by-step instructions for wrongdoing.
+                If a user asks for such instructions, respond with the refusal:
+                "Извините, я не могу помогать с инструкциями по причинению вреда или изготовлению оружия. Могу помочь с безопасной информацией про криптовалюту."
+                
+                USER prompt (передаётся вместе с контекстом):
+                Задача: Тщательно проанализируй предоставленный контекст и дай развёрнутый ответ на вопрос.
+                
+                Общие правила:
+                - Отвечай ТОЛЬКО на основании информации, явно присутствующей в блоке "Контекст" ниже.
+                - Если запрос — инструкция по вреду / незаконной деятельности, СРАЗУ ОТКАЖИСЬ согласно правилу (не продолжай).
+                - Если в контексте нет данных, подтверждающих ответ — напиши ровно: "Недостаточно информации".
+                - Каждый фактический пункт обязан иметь источники в формате.
+                - Не форматируй текст жирным или иным маркером.
+                - Не добавляй внешней информации и не упоминай, что используешь контекст.
+                - Это запрос с уклоном на расширенный ответ, старайся дать большой и точный ответ.
+                
+                Контекст:
+                {context}
+                
+                Вопрос:
+                {question}
+                
+                Ответ:
+                """);
+
+        Prompt prompt = promptTemplate.create(Map.of(
+                "context", context,
+                "question", query
+        ));
+        log.info(query + " | " + context);
+
+        ChatResponse response = chatModel.call(prompt);
+        return response.getResult().getOutput().getText();
+    }
+    public String chatWithRagCommon(String query) {
         List<Document> docs = qdrantservice.search(
                 SearchRequest
                         .builder()
@@ -71,6 +135,30 @@ public class ChatService {
                 Map.of("context", context, "question", StringPreparing.cleanText(query)));
         ChatResponse response = chatModel.call(prompt);
         return response.getResult().getOutput().getText();
+    }
+
+    private List<String> generateVariants(String query) {
+        String prompt = """
+                Дай 5 переформулировки поискового запроса.
+                Используй только синонимы или перефраз, не меняй смысл.
+                Верни результат в JSON-массиве строк.
+                
+                Запрос: "%s"
+                """.formatted(query);
+
+        ChatResponse resp = chatModel.call(new Prompt(prompt));
+        String json = resp.getResult().getOutput().getText();
+
+        try {
+            List<String> variants = objectMapper.readValue(json, new TypeReference<>() {
+            });
+            Set<String> set = new LinkedHashSet<>();
+            set.add(query);
+            set.addAll(variants);
+            return new ArrayList<>(set);
+        } catch (Exception e) {
+            return List.of(query);
+        }
     }
 
     @Async
