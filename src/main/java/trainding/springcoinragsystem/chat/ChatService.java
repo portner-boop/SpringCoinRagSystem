@@ -34,7 +34,6 @@ public class ChatService {
 
     public String chatWithRagAdvanced(String query) {
         List<String> variants = generateVariants(query);
-        variants.add(query);
         Map<String, Float> aggregatedScores = new HashMap<>();
         Map<String, Document> textToDoc = new HashMap<>();
         for (String variant : variants) {
